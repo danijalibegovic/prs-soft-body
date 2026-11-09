@@ -1,0 +1,23 @@
+# CMake and compiler output
+/build/
+/out/
+CMakeUserPresets.json
+
+# IDE and editor state
+.vs/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# Tool and OS noise
+.cache/
+compile_commands.json
+*.user
+*.suo
+*.pdb
+*.ilk
+*.exe
+*.obj
+*.o

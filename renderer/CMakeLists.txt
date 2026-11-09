@@ -5,8 +5,8 @@ set(CMAKE_CXX_STANDARD 20)
 
 set(BULLET_PACKAGE_ROOT "C:/Users/Alibegovici/Desktop/ETF/Master/Prva/PRS/bullet3/build_shared/package"
     CACHE PATH "Bullet shared-library package root")
-set(XPBD_ADAPTER_DLL "C:/Users/Alibegovici/Desktop/ETF/Master/Prva/PRS/Soft-body-simulation/build/mingw-release/libsoft_body_xpbd_adapter.dll"
-    CACHE FILEPATH "XPBD adapter runtime DLL")
+set(XPBD_ADAPTER_DLL "${CMAKE_SOURCE_DIR}/../soft-body-simulation/build/mingw-release/libsoft_body_xpbd_adapter.dll" 
+    CACHE FILEPATH "XPBD adapter runtime DLL" FORCE)
 
 foreach(_bullet_file
         bin/libLinearMath_Debug.dll
