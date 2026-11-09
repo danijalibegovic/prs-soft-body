@@ -290,8 +290,16 @@ void Application::RunFrame(Scene &scene,
 
         // RendererUI::Draw() also calls renderer.Resize(vpW, vpH) internally
         // so the GL viewport stays correct even as the sidebar is resized.
+        const std::size_t sceneIndexBeforeUi = activeSceneIndex;
         m_ui->Draw(fbW, fbH, scene, *m_renderer, &m_input->GetMouse(),
                    scenes, activeSceneIndex);
+
+        if (activeSceneIndex != sceneIndexBeforeUi &&
+            activeSceneIndex < scenes.size() &&
+            scenes[activeSceneIndex] != nullptr)
+        {
+            scenes[activeSceneIndex]->OnActivated();
+        }
 
         scene.OnImGuiRender();
 
@@ -608,6 +616,7 @@ void Application::Run(const std::vector<Scene *> &scenes, std::size_t initialIdx
     }
 
     spdlog::info("[Application] Starting at scene {}", m_activeSceneIndex);
+    m_scenes[m_activeSceneIndex]->OnActivated();
 
     while (!glfwWindowShouldClose(m_window))
     {
@@ -628,6 +637,7 @@ void Application::Run(const std::vector<Scene *> &scenes, std::size_t initialIdx
                 m_activeSceneIndex != i)
             {
                 m_activeSceneIndex = i;
+                m_scenes[m_activeSceneIndex]->OnActivated();
                 spdlog::info("[Application] Switched to scene {} (key {})", i, i + 1);
                 break;
             }

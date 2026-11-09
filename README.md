@@ -55,31 +55,20 @@ build.bat       # Windows - Release by default
 
 ## Demo scenes
 
-Switch between scenes with number keys `1`-`6` or the top `Scenes` menu.
-Full descriptions, controls, and what a correct run should look like are in
+The application loads one Bullet soft-body showcase scene.
+Its controls and expected behavior are documented in
 [docs/scenes.md](./docs/scenes.md).
 
 | Key | Scene | Purpose |
 | :-- | :---- | :------ |
-| `1` | **Terrain** | Procedural terrain generation with material zones, masks, and tuning controls. |
-| `2` | **Bistro** | Large imported scene exercising PBR materials, shadows, HDR, bloom, and IBL. Requires a manual asset download - see [docs/BistroAssetSetup.md](./docs/BistroAssetSetup.md). |
-| `3` | **Capture: Baseline** | Small, stable object set for low-cost reference captures. |
-| `4` | **Capture: Dense Grid** | Many repeated objects to make draw-call and pass-timing changes visible. |
-| `5` | **Capture: Material Sweep** | Many material instances to exercise material/state counters. |
-| `6` | **Capture: Culling Test** | Objects inside, outside, and behind the camera to compare submitted/visible/culled counts. |
+| `1` | **Bullet Soft Cube** | Fixed-step jiggly cube falling onto and settling on a solid ground plane. |
 
-## Debug Overlay and Capture Presets
+## Debug Overlay
 
 The runtime debug overlay is the ImGui inspector shown on the left side of the window. Press `X` to show or hide it, and press `TAB` if mouse-look is captured and you need UI control. Open the `Stats` tab to inspect frame timing, render pass timings, culling counts, draw/state-change counters, lights, cameras, and scene/cache resource counts.
 
-Demo scenes and capture presets can be selected from the top `Scenes` menu or with number keys `1` through `9`. The capture presets are deterministic scenes intended for screenshots, demos, and quick renderer-stat checks:
-
-- `Capture: Baseline` keeps a small, stable object set for low-cost reference captures.
-- `Capture: Dense Grid` submits many repeated objects so draw-call and pass timing changes are easy to see.
-- `Capture: Material Sweep` uses many material instances to exercise material/state counters.
-- `Capture: Culling Test` places objects inside, outside, and behind the camera view so submitted, visible, and culled counts are easy to compare.
-
-The overlay timings are CPU-side measurements. Submitted items come from the active scene submission, visible items are accepted into the forward render queue after culling, culled items are rejected by camera-frustum culling, and draw/state counters are reset and measured each frame while the queue is flushed.
+The overlay timings are CPU-side measurements. The scene is selected
+automatically at startup; no alternate demo scenes are loaded by `TestApp`.
 
 
 ### IDE / LSP support

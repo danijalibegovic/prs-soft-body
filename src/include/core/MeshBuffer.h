@@ -58,6 +58,9 @@ public:
     /// - non-indexed -> glDrawArrays(primitiveMode, ...)
     void Draw(GLenum primitiveMode = GL_TRIANGLES) const;
 
+    /// Updates the complete position/color vertex stream without rebuilding the VAO.
+    void UpdateVertexData(const void* vertexData, GLsizeiptr vertexBufferSize);
+
     [[nodiscard]] GLsizei GetVertexCount() const { return m_vertexCount; }
     [[nodiscard]] GLsizei GetIndexCount() const { return m_indexCount; }
     [[nodiscard]] bool IsIndexed() const { return m_isIndexed; }

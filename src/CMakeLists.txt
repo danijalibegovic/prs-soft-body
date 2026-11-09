@@ -49,11 +49,25 @@ add_library(${PROJECT_NAME} STATIC
         opengl/core/Mesh.cpp
         include/ui/RendererUI.h
         opengl/ui/RendererUI.cpp
-        
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC
     include
+)
+
+add_library(BulletSoftBodyAdapter STATIC
+    opengl/physics/SoftBodyAdapter.cpp
+)
+
+target_include_directories(BulletSoftBodyAdapter PUBLIC
+    include
+)
+
+target_link_libraries(BulletSoftBodyAdapter PRIVATE
+    BulletSoftBody
+    BulletDynamics
+    BulletCollision
+    BulletLinearMath
 )
 
 find_package(OpenGL REQUIRED)

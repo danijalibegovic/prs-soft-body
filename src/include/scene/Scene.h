@@ -35,6 +35,8 @@ public:
     virtual void OnUpdate(float deltaTime, IInputProvider &input) {
     }
 
+    virtual void OnActivated() {}
+
     /// Sets whether the skybox should be rendered.
     void SetSkyboxVisible(bool visible) { m_skyboxVisible = visible; }
 

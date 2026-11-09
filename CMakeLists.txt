@@ -3,6 +3,60 @@ project(ForwardRendererProject)
 
 set(CMAKE_CXX_STANDARD 20)
 
+set(BULLET_PACKAGE_ROOT "C:/Users/Alibegovici/Desktop/ETF/Master/Prva/PRS/bullet3/build_shared/package"
+    CACHE PATH "Bullet shared-library package root")
+set(XPBD_ADAPTER_DLL "C:/Users/Alibegovici/Desktop/ETF/Master/Prva/PRS/Soft-body-simulation/build/mingw-release/libsoft_body_xpbd_adapter.dll"
+    CACHE FILEPATH "XPBD adapter runtime DLL")
+
+foreach(_bullet_file
+        bin/libLinearMath_Debug.dll
+        bin/libBulletCollision_Debug.dll
+        bin/libBulletDynamics_Debug.dll
+        bin/libBulletSoftBody_Debug.dll
+        lib/libLinearMath_Debug.dll.a
+        lib/libBulletCollision_Debug.dll.a
+        lib/libBulletDynamics_Debug.dll.a
+        lib/libBulletSoftBody_Debug.dll.a)
+    if(NOT EXISTS "${BULLET_PACKAGE_ROOT}/${_bullet_file}")
+        message(FATAL_ERROR "Missing Bullet package file: ${BULLET_PACKAGE_ROOT}/${_bullet_file}")
+    endif()
+endforeach()
+
+add_library(BulletLinearMath SHARED IMPORTED GLOBAL)
+set_target_properties(BulletLinearMath PROPERTIES
+    IMPORTED_IMPLIB "${BULLET_PACKAGE_ROOT}/lib/libLinearMath_Debug.dll.a"
+    IMPORTED_LOCATION "${BULLET_PACKAGE_ROOT}/bin/libLinearMath_Debug.dll"
+    INTERFACE_INCLUDE_DIRECTORIES "${BULLET_PACKAGE_ROOT}/include;${BULLET_PACKAGE_ROOT}/include/bullet"
+)
+
+add_library(BulletCollision SHARED IMPORTED GLOBAL)
+set_target_properties(BulletCollision PROPERTIES
+    IMPORTED_IMPLIB "${BULLET_PACKAGE_ROOT}/lib/libBulletCollision_Debug.dll.a"
+    IMPORTED_LOCATION "${BULLET_PACKAGE_ROOT}/bin/libBulletCollision_Debug.dll"
+    INTERFACE_INCLUDE_DIRECTORIES "${BULLET_PACKAGE_ROOT}/include;${BULLET_PACKAGE_ROOT}/include/bullet"
+)
+
+add_library(BulletDynamics SHARED IMPORTED GLOBAL)
+set_target_properties(BulletDynamics PROPERTIES
+    IMPORTED_IMPLIB "${BULLET_PACKAGE_ROOT}/lib/libBulletDynamics_Debug.dll.a"
+    IMPORTED_LOCATION "${BULLET_PACKAGE_ROOT}/bin/libBulletDynamics_Debug.dll"
+    INTERFACE_INCLUDE_DIRECTORIES "${BULLET_PACKAGE_ROOT}/include;${BULLET_PACKAGE_ROOT}/include/bullet"
+)
+
+add_library(BulletSoftBody SHARED IMPORTED GLOBAL)
+set_target_properties(BulletSoftBody PROPERTIES
+    IMPORTED_IMPLIB "${BULLET_PACKAGE_ROOT}/lib/libBulletSoftBody_Debug.dll.a"
+    IMPORTED_LOCATION "${BULLET_PACKAGE_ROOT}/bin/libBulletSoftBody_Debug.dll"
+    INTERFACE_INCLUDE_DIRECTORIES "${BULLET_PACKAGE_ROOT}/include;${BULLET_PACKAGE_ROOT}/include/bullet"
+)
+
+set(BULLET_RUNTIME_DLLS
+    "${BULLET_PACKAGE_ROOT}/bin/libLinearMath_Debug.dll"
+    "${BULLET_PACKAGE_ROOT}/bin/libBulletCollision_Debug.dll"
+    "${BULLET_PACKAGE_ROOT}/bin/libBulletDynamics_Debug.dll"
+    "${BULLET_PACKAGE_ROOT}/bin/libBulletSoftBody_Debug.dll"
+)
+
 set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/_deps")
 include(FetchContent)
 
@@ -102,3 +156,5 @@ endif()
 
 add_subdirectory(src)
 add_subdirectory(test-app)
+add_subdirectory(bullet-smoke)
+add_subdirectory(xpbd-smoke)

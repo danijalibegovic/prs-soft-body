@@ -1,11 +1,9 @@
 #include "app/Application.h"
 #include <spdlog/spdlog.h>
-#include <cstddef>
 #include <vector>
 
-#include "BistroScene.h"
-#include "CapturePresetScene.h"
-#include "TerrainScene.h"
+#include "BulletSoftBodyScene.h"
+#include "XpbdSoftBodyScene.h"
 
 int main()
 {
@@ -18,43 +16,23 @@ int main()
         return -1;
     }
 
-    TerrainScene terrainScene;
-    BistroScene bistroScene;
-    CapturePresetScene captureBaseline(CapturePresetKind::Baseline);
-    CapturePresetScene captureDenseGrid(CapturePresetKind::DenseGrid);
-    CapturePresetScene captureMaterialSweep(CapturePresetKind::MaterialSweep);
-    CapturePresetScene captureCulling(CapturePresetKind::CullingTest);
+    BulletSoftBodyScene bulletSoftBodyScene;
+    XpbdSoftBodyScene xpbdSoftBodyScene;
 
-    bool terrainOk = terrainScene.Setup();
-    bool bistroOk = bistroScene.Setup();
-    bool captureBaselineOk = captureBaseline.Setup();
-    bool captureDenseGridOk = captureDenseGrid.Setup();
-    bool captureMaterialSweepOk = captureMaterialSweep.Setup();
-    bool captureCullingOk = captureCulling.Setup();
+    bool bulletSoftBodyOk = bulletSoftBodyScene.Setup();
+    bool xpbdSoftBodyOk = xpbdSoftBodyScene.Setup();
 
-    if (!terrainOk)
-        spdlog::error("[TestApp] TerrainScene::Setup() failed");
-    if (!bistroOk)
-        spdlog::error("[TestApp] BistroScene::Setup() failed");
-    if (!captureBaselineOk)
-        spdlog::error("[TestApp] Capture baseline setup failed");
-    if (!captureDenseGridOk)
-        spdlog::error("[TestApp] Capture dense grid setup failed");
-    if (!captureMaterialSweepOk)
-        spdlog::error("[TestApp] Capture material sweep setup failed");
-    if (!captureCullingOk)
-        spdlog::error("[TestApp] Capture culling setup failed");
+    if (!bulletSoftBodyOk)
+        spdlog::error("[TestApp] BulletSoftBodyScene::Setup() failed");
+    if (!xpbdSoftBodyOk)
+        spdlog::warn("[TestApp] XPBD scene disabled");
 
     std::vector<Scene*> scenes;
-    if (terrainOk) scenes.push_back(&terrainScene);
-    if (bistroOk) scenes.push_back(&bistroScene);
-    if (captureBaselineOk) scenes.push_back(&captureBaseline);
-    if (captureDenseGridOk) scenes.push_back(&captureDenseGrid);
-    if (captureMaterialSweepOk) scenes.push_back(&captureMaterialSweep);
-    if (captureCullingOk) scenes.push_back(&captureCulling);
+    if (bulletSoftBodyOk) scenes.push_back(&bulletSoftBodyScene);
+    if (xpbdSoftBodyOk) scenes.push_back(&xpbdSoftBodyScene);
 
-    for (std::size_t i = 0; i < scenes.size(); ++i)
-        spdlog::info("[TestApp] Press {} for {}", i + 1, scenes[i]->GetName());
+    for (Scene* scene : scenes)
+        spdlog::info("[TestApp] Loaded {}", scene->GetName());
 
     if (!scenes.empty())
         app.Run(scenes, 0);

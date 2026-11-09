@@ -88,3 +88,14 @@ void MeshBuffer::Draw(GLenum primitiveMode) const
         glDrawArrays(primitiveMode, 0, m_vertexCount);
     }
 }
+
+void MeshBuffer::UpdateVertexData(const void* vertexData, GLsizeiptr vertexBufferSize)
+{
+    if (vertexData == nullptr || vertexBufferSize <= 0)
+    {
+        spdlog::error("[MeshBuffer] UpdateVertexData() received invalid data");
+        return;
+    }
+
+    m_vbo.UpdateData(vertexData, vertexBufferSize);
+}

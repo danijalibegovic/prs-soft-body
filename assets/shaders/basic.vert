@@ -16,9 +16,12 @@ uniform mat4 u_Model;
 
 // Outputs to fragment stage
 out vec3 v_Color;
+out vec3 v_WorldPosition;
 
 void main()
 {
     v_Color = a_Color;
-    gl_Position = projection * view * u_Model * vec4(a_Position, 1.0);
+    vec4 worldPosition = u_Model * vec4(a_Position, 1.0);
+    v_WorldPosition = worldPosition.xyz;
+    gl_Position = projection * view * worldPosition;
 }
