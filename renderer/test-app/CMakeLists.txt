@@ -20,7 +20,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 )
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
-        XPBD_ADAPTER_SOURCE_DLL="${XPBD_ADAPTER_DLL}"
+    XPBD_ADAPTER_SOURCE_DLL="$<TARGET_FILE:soft_body_xpbd_adapter>"
 )
 
 # Copy shaders to test app output directory
@@ -31,18 +31,12 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMENT "Copying assets to test app output directory"
 )
 
-foreach(_bullet_dll IN LISTS BULLET_RUNTIME_DLLS)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${_bullet_dll}"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-        COMMENT "Copying Bullet runtime DLL"
-    )
-endforeach()
+
+add_dependencies(${PROJECT_NAME} soft_body_xpbd_adapter)
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "${XPBD_ADAPTER_DLL}"
-            "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-        COMMENT "Copying XPBD runtime DLL"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "$<TARGET_FILE:soft_body_xpbd_adapter>"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+    COMMENT "Copying XPBD runtime DLL"
 )

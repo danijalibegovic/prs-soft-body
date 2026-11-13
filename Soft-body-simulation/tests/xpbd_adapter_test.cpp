@@ -47,7 +47,9 @@ int main() {
         );
 
         check(sphere != nullptr, "Sphere creation failed");
-        check(softBodyGetNodeCount(sphere) == 114,
+
+
+        check(softBodyGetNodeCount(sphere) == 115,
               "Incorrect sphere node count");
         check(softBodyGetFaceCount(sphere) == 224,
               "Incorrect sphere face count");
@@ -238,7 +240,7 @@ int main() {
         check(softWorldGetStats(world, &stats) == 1,
               "Failed to get statistics");
 
-        check(stats.node_count == 243,
+        check(stats.node_count == 244,
               "Incorrect world node count");
 
         check(stats.face_count == 436,

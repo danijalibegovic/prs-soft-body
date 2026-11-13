@@ -61,14 +61,18 @@ add_library(BulletSoftBodyAdapter STATIC
 
 target_include_directories(BulletSoftBodyAdapter PUBLIC
     include
+    "${bullet3_SOURCE_DIR}"
+    "${bullet3_SOURCE_DIR}/src"
 )
 
-target_link_libraries(BulletSoftBodyAdapter PRIVATE
+
+target_link_libraries(BulletSoftBodyAdapter PUBLIC
     BulletSoftBody
     BulletDynamics
     BulletCollision
-    BulletLinearMath
+    LinearMath
 )
+
 
 find_package(OpenGL REQUIRED)
 

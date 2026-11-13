@@ -1,64 +1,42 @@
 cmake_minimum_required(VERSION 3.26.0)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
 project(ForwardRendererProject)
 
 set(CMAKE_CXX_STANDARD 20)
 
-set(BULLET_PACKAGE_ROOT "C:/Users/Alibegovici/Desktop/ETF/Master/Prva/PRS/bullet3/build_shared/package"
-    CACHE PATH "Bullet shared-library package root")
-set(XPBD_ADAPTER_DLL "${CMAKE_SOURCE_DIR}/../soft-body-simulation/build/mingw-release/libsoft_body_xpbd_adapter.dll" 
-    CACHE FILEPATH "XPBD adapter runtime DLL" FORCE)
+if(WIN32)
+    add_compile_definitions(NOMINMAX)
+endif()
 
-foreach(_bullet_file
-        bin/libLinearMath_Debug.dll
-        bin/libBulletCollision_Debug.dll
-        bin/libBulletDynamics_Debug.dll
-        bin/libBulletSoftBody_Debug.dll
-        lib/libLinearMath_Debug.dll.a
-        lib/libBulletCollision_Debug.dll.a
-        lib/libBulletDynamics_Debug.dll.a
-        lib/libBulletSoftBody_Debug.dll.a)
-    if(NOT EXISTS "${BULLET_PACKAGE_ROOT}/${_bullet_file}")
-        message(FATAL_ERROR "Missing Bullet package file: ${BULLET_PACKAGE_ROOT}/${_bullet_file}")
-    endif()
-endforeach()
-
-add_library(BulletLinearMath SHARED IMPORTED GLOBAL)
-set_target_properties(BulletLinearMath PROPERTIES
-    IMPORTED_IMPLIB "${BULLET_PACKAGE_ROOT}/lib/libLinearMath_Debug.dll.a"
-    IMPORTED_LOCATION "${BULLET_PACKAGE_ROOT}/bin/libLinearMath_Debug.dll"
-    INTERFACE_INCLUDE_DIRECTORIES "${BULLET_PACKAGE_ROOT}/include;${BULLET_PACKAGE_ROOT}/include/bullet"
-)
-
-add_library(BulletCollision SHARED IMPORTED GLOBAL)
-set_target_properties(BulletCollision PROPERTIES
-    IMPORTED_IMPLIB "${BULLET_PACKAGE_ROOT}/lib/libBulletCollision_Debug.dll.a"
-    IMPORTED_LOCATION "${BULLET_PACKAGE_ROOT}/bin/libBulletCollision_Debug.dll"
-    INTERFACE_INCLUDE_DIRECTORIES "${BULLET_PACKAGE_ROOT}/include;${BULLET_PACKAGE_ROOT}/include/bullet"
-)
-
-add_library(BulletDynamics SHARED IMPORTED GLOBAL)
-set_target_properties(BulletDynamics PROPERTIES
-    IMPORTED_IMPLIB "${BULLET_PACKAGE_ROOT}/lib/libBulletDynamics_Debug.dll.a"
-    IMPORTED_LOCATION "${BULLET_PACKAGE_ROOT}/bin/libBulletDynamics_Debug.dll"
-    INTERFACE_INCLUDE_DIRECTORIES "${BULLET_PACKAGE_ROOT}/include;${BULLET_PACKAGE_ROOT}/include/bullet"
-)
-
-add_library(BulletSoftBody SHARED IMPORTED GLOBAL)
-set_target_properties(BulletSoftBody PROPERTIES
-    IMPORTED_IMPLIB "${BULLET_PACKAGE_ROOT}/lib/libBulletSoftBody_Debug.dll.a"
-    IMPORTED_LOCATION "${BULLET_PACKAGE_ROOT}/bin/libBulletSoftBody_Debug.dll"
-    INTERFACE_INCLUDE_DIRECTORIES "${BULLET_PACKAGE_ROOT}/include;${BULLET_PACKAGE_ROOT}/include/bullet"
-)
-
-set(BULLET_RUNTIME_DLLS
-    "${BULLET_PACKAGE_ROOT}/bin/libLinearMath_Debug.dll"
-    "${BULLET_PACKAGE_ROOT}/bin/libBulletCollision_Debug.dll"
-    "${BULLET_PACKAGE_ROOT}/bin/libBulletDynamics_Debug.dll"
-    "${BULLET_PACKAGE_ROOT}/bin/libBulletSoftBody_Debug.dll"
+# XPBD - koristi lokalni projekat iz zajednickog repozitorija
+add_subdirectory(
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Soft-body-simulation"
+    "${CMAKE_CURRENT_BINARY_DIR}/xpbd-build"
 )
 
 set(FETCHCONTENT_BASE_DIR "${CMAKE_BINARY_DIR}/_deps")
 include(FetchContent)
+
+
+
+# Bullet3 - automatsko preuzimanje i izgradnja
+set(BUILD_BULLET2_DEMOS OFF CACHE BOOL "" FORCE)
+set(BUILD_CPU_DEMOS OFF CACHE BOOL "" FORCE)
+set(BUILD_OPENGL3_DEMOS OFF CACHE BOOL "" FORCE)
+set(BUILD_EXTRAS OFF CACHE BOOL "" FORCE)
+set(BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+set(BUILD_PYBULLET OFF CACHE BOOL "" FORCE)
+
+FetchContent_Declare(
+    bullet3
+    GIT_REPOSITORY https://github.com/bulletphysics/bullet3.git
+    GIT_TAG 3.25
+    GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(bullet3)
+
+
 
 FetchContent_Declare(glfw
         GIT_REPOSITORY https://github.com/glfw/glfw.git

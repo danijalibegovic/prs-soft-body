@@ -11,8 +11,11 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog)
 
+add_dependencies(${PROJECT_NAME} soft_body_xpbd_adapter)
+
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${XPBD_ADAPTER_DLL}"
+        "$<TARGET_FILE:soft_body_xpbd_adapter>"
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+    COMMENT "Copying XPBD runtime DLL"
 )

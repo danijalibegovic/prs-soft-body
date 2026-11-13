@@ -305,3 +305,32 @@ if(SOFT_BODY_BUILD_TESTS)
         COMMAND soft_soft_collision_test
     )
 endif()
+
+
+# Kopiranje potrebnih DLL-ova pored testova na Windowsu
+if(SOFT_BODY_BUILD_TESTS AND WIN32)
+    foreach(_test_target
+        soft_soft_collision_test
+        soft_soft_edge_collision_test
+        xpbd_adapter_test
+    )
+        if(TARGET ${_test_target})
+            add_custom_command(TARGET ${_test_target} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "$<TARGET_FILE:soft_body_xpbd_adapter>"
+                    "$<TARGET_FILE_DIR:${_test_target}>"
+                VERBATIM
+            )
+        endif()
+    endforeach()
+
+    if(TARGET dll_smoke_test)
+        add_custom_command(TARGET dll_smoke_test POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:soft_body_xpbd>"
+                "$<TARGET_FILE_DIR:dll_smoke_test>"
+            VERBATIM
+        )
+    endif()
+endif()
+

@@ -1,0 +1,8 @@
+# Build files
+/build/
+
+# Simulation output
+/bullet_soft_body.csv
+
+# Local ImGui settings
+/imgui.ini
