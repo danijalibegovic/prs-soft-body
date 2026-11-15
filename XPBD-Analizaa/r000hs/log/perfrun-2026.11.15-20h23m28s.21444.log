@@ -1,0 +1,106 @@
+61 [10840] INFO perfrun.launcher <> - Launcher main begin
+69 [10840] INFO perfrun.launcher <> - MessageCatalogInit finished
+69 [10840] INFO perfrun.launcher <> - Launcher instance created
+69 [10840] INFO perfrun.launcher <> - argc = 7; cmdline = C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64\amplxe-runss.exe --ui-output-format xml --ui-output-fd 1132 --option-file C:\Users\zerin\OneDrive\Desktop\SoftBodyProjekt\prs-soft-body\XPBD-Analizaa\r000hs\config\runss.options 
+83 [10840] INFO perfrun.launcher <> - New signal handler callback was added
+145 [10840] INFO perfrun.perfcollector <> - SEP tool path: C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64\sep.exe
+161 [10840] INFO perfrun.launcher <> - create msngr2::ICliToolContext
+162 [10840] INFO perfrun.launcher <> - create file finder object
+162 [10840] INFO perfrun.launcher <> - create a result directory: pattern = C:\Users\zerin\OneDrive\Desktop\SoftBodyProjekt\prs-soft-body\XPBD-Analizaa\r000hs pid = 4294967295
+170 [10840] INFO perfrun.launcher <> - create data directory = C:\Users\zerin\OneDrive\Desktop\SoftBodyProjekt\prs-soft-body\XPBD-Analizaa\r000hs\data.0
+173 [10840] INFO perfrun.launcher <> - Creating the master collection flag
+183 [10840] INFO perfrun.launcher <> - Done creating the master collection flag
+183 [23088] INFO perfrun.launcher <> - plugin [remoteplug] was disabled because it doesn't support the given collection type.
+184 [23088] INFO perfrun.sdk <> - Allocating TMU :C:\Users\zerin\OneDrive\Desktop\SoftBodyProjekt\prs-soft-body\XPBD-Analizaa\r000hs\data.0\systemcollector-21444-Zerina.sc
+185 [23088] INFO perfrun.launcher <> - plugin [] was disabled because it doesn't support the given collection type.
+187 [23088] INFO perfrun.launcher <> - plugin [] was disabled because it doesn't support the given collection type.
+187 [23088] INFO perfrun.launcher <> - plugin [gpu] was disabled because it doesn't support the given collection type.
+188 [23088] INFO perfrun.launcher <> - plugin [etw.kernel] was disabled because it doesn't support the given collection type.
+188 [23088] INFO perfrun.launcher <> - plugin [etw.dx] was disabled because it doesn't support the given collection type.
+188 [23088] INFO perfrun.launcher <> - plugin [etw.wsa] was disabled because it doesn't support the given collection type.
+188 [23088] INFO perfrun.mrte <> - system-wide mode is 0
+188 [23088] INFO perfrun.mrte <> - Getting  mrte profiling environment ...
+227 [23088] INFO perfrun.mrte <> - INTEL_MRTE_DATA_DIR=C:\Users\zerin\OneDrive\Desktop\SoftBodyProjekt\prs-soft-body\XPBD-Analizaa\r000hs\data.0
+228 [23088] INFO perfrun.mrte <> - INTEL_MRTE_HOST_NAME=Zerina
+228 [23088] INFO perfrun.mrte <> - JAVA_TOOL_OPTIONS=-agentlib:amplxe_samplingmrte_javaprof_1.0
+228 [23088] INFO perfrun.mrte <> - PATH=C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64\runtime;C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64\runtime;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Program Files\CMake\bin;C:\Users\zerin\AppData\Local\Microsoft\WindowsApps;C:\Users\zerin\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\zerin\AppData\Local\GitHubCopilotCLI\;C:\Users\zerin\AppData\Local\Programs\Microsoft VS Code\bin\copilot-shim
+228 [23088] INFO perfrun.mrte <> - COR_ENABLE_PROFILING=1
+228 [23088] INFO perfrun.mrte <> - COR_PROFILER={AA5E4821-E3B1-479c-B7FF-5AD047D22CED}
+228 [23088] INFO perfrun.mrte <> - COR_PROFILER_PATH=C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64/amplxe_samplingmrte_clrprof_1.0.dll
+228 [23088] INFO perfrun.mrte <> - COMPLUS_ProfAPI_ProfilerCompatibilitySetting=EnableV2Profiler
+228 [23088] INFO perfrun.mrte <> - CORECLR_ENABLE_PROFILING=1
+228 [23088] INFO perfrun.mrte <> - CORECLR_PROFILER={AA5E4821-E3B1-479c-B7FF-5AD047D22CED}
+228 [23088] INFO perfrun.mrte <> - CORECLR_PROFILER_PATH=C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64/amplxe_samplingmrte_clrprof_1.0.dll
+228 [23088] INFO perfrun.mrte <> - INTEL_MRTE_PROFILER_MODE=mixed
+228 [23088] INFO perfrun.mrte <> - Data directory: C:\Users\zerin\OneDrive\Desktop\SoftBodyProjekt\prs-soft-body\XPBD-Analizaa\r000hs\data.0
+228 [23088] INFO perfrun.mrte <> - Mrte plugin is initialized
+228 [23088] INFO perfrun.launcher <> - plugin [emon] was disabled because it doesn't support the given collection type.
+228 [23088] INFO perfrun.launcher <> - plugin [cuscol] was disabled because it doesn't support the given collection type.
+228 [23088] INFO perfrun.launcher <> - plugin [stdsrc] was disabled because it doesn't support the given collection type.
+228 [23088] INFO perfrun.launcher <> - plugin [sep] was disabled because it doesn't support the given collection type.
+228 [23088] INFO perfrun.launcher <> - plugin [vtsspp] was disabled because it doesn't support the given collection type.
+228 [23088] INFO perfrun.launcher <> - plugin [perf] was disabled because it doesn't support the given collection type.
+228 [23088] INFO perfrun.launcher <> - plugin [aoclprofile] was disabled because it doesn't support the given collection type.
+228 [23088] INFO perfrun.tpss <> - initialize tpss controller
+229 [23088] INFO perfrun.tpss <> - configure collection mode: value = cpu:stack
+229 [23088] INFO perfrun.tpss <> - default obj-size-min=1024
+229 [23088] INFO perfrun.tpss <> - default hash-table-size=0
+229 [23088] INFO perfrun.launcher <> - plugin [] was disabled because it doesn't support the given collection type.
+229 [23088] INFO perfrun.launcher <> - plugin [] was disabled because it doesn't support the given collection type.
+229 [23088] INFO perfrun.launcher <> - plugin [] was disabled because it doesn't support the given collection type.
+229 [23088] INFO perfrun.launcher <> - plugin [] was disabled because it doesn't support the given collection type.
+229 [23088] INFO perfrun.launcher <> - plugin [power] was disabled because it doesn't support the given collection type.
+229 [23088] INFO perfrun.launcher <> - plugin [] was disabled because it doesn't support the given collection type.
+229 [23088] INFO perfrun.launcher <> - plugin [] was disabled because it doesn't support the given collection type.
+229 [23088] INFO perfrun.launcher <> - plugin [] was disabled because it doesn't support the given collection type.
+229 [23088] INFO perfrun.launcher <> - plugin [l0_metrics] was disabled because it doesn't support the given collection type.
+229 [23088] INFO perfrun.launcher <> - plugin [stall_reasons] was disabled because it doesn't support the given collection type.
+229 [10840] INFO perfrun.launcher <> - set environment variable: PATH = C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64\runtime;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Program Files\CMake\bin;C:\Users\zerin\AppData\Local\Microsoft\WindowsApps;C:\Users\zerin\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\zerin\AppData\Local\GitHubCopilotCLI\;C:\Users\zerin\AppData\Local\Programs\Microsoft VS Code\bin\copilot-shim
+230 [10840] INFO perfrun.launcher <> - set environment variable: INTEL_LIBITTNOTIFY64 = C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64\runtime\ittnotify_collector.dll
+230 [10840] INFO perfrun.launcher <> - set environment variable: INTEL_ITTNOTIFY_GROUPS = 
+230 [10840] INFO perfrun.launcher <> - set environment variable: INTEL_JIT_PROFILER64 = C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64\runtime\ittnotify_collector.dll
+230 [10840] INFO perfrun.launcher <> - set environment variable: CCL_ITT_LEVEL = 1
+230 [10840] INFO perfrun.launcher <> - set environment variable: ENABLE_JITPROFILING = 1
+230 [10840] INFO perfrun.launcher <> - set environment variable: CL_CONFIG_USE_VTUNE = True
+230 [10840] INFO perfrun.launcher <> - set environment variable: KMP_FORKJOIN_FRAMES = 0
+230 [10840] INFO perfrun.launcher <> - set environment variable: KMP_FORKJOIN_FRAMES_MODE = 0
+230 [10840] INFO perfrun.launcher <> - set environment variable: INTEL_MRTE_DATA_DIR = C:\Users\zerin\OneDrive\Desktop\SoftBodyProjekt\prs-soft-body\XPBD-Analizaa\r000hs\data.0
+230 [10840] INFO perfrun.launcher <> - set environment variable: INTEL_MRTE_HOST_NAME = Zerina
+230 [10840] INFO perfrun.launcher <> - set environment variable: JAVA_TOOL_OPTIONS = -agentlib:amplxe_samplingmrte_javaprof_1.0
+230 [10840] INFO perfrun.launcher <> - set environment variable: PATH = C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64\runtime;C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64\runtime;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Windows\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Program Files\CMake\bin;C:\Users\zerin\AppData\Local\Microsoft\WindowsApps;C:\Users\zerin\AppData\Local\Programs\Microsoft VS Code\bin;C:\Users\zerin\AppData\Local\GitHubCopilotCLI\;C:\Users\zerin\AppData\Local\Programs\Microsoft VS Code\bin\copilot-shim
+231 [10840] INFO perfrun.launcher <> - set environment variable: COR_ENABLE_PROFILING = 1
+231 [10840] INFO perfrun.launcher <> - set environment variable: COR_PROFILER = {AA5E4821-E3B1-479c-B7FF-5AD047D22CED}
+231 [10840] INFO perfrun.launcher <> - set environment variable: COR_PROFILER_PATH = C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64/amplxe_samplingmrte_clrprof_1.0.dll
+231 [10840] INFO perfrun.launcher <> - set environment variable: COMPLUS_ProfAPI_ProfilerCompatibilitySetting = EnableV2Profiler
+231 [10840] INFO perfrun.launcher <> - set environment variable: CORECLR_ENABLE_PROFILING = 1
+231 [10840] INFO perfrun.launcher <> - set environment variable: CORECLR_PROFILER = {AA5E4821-E3B1-479c-B7FF-5AD047D22CED}
+231 [10840] INFO perfrun.launcher <> - set environment variable: CORECLR_PROFILER_PATH = C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64/amplxe_samplingmrte_clrprof_1.0.dll
+231 [10840] INFO perfrun.launcher <> - set environment variable: INTEL_MRTE_PROFILER_MODE = mixed
+231 [10840] INFO perfrun.launcher <> - RpcServer: run RPC server to handle requests
+250 [10840] INFO perfrun.sdk <> - IProcessUtil: the given executable 'C:\Users\zerin\OneDrive\Desktop\SoftBodyProjekt\prs-soft-body\renderer\build-vs\test-app\RelWithDebInfo\TestApp.exe' is valid.
+251 [10840] INFO perfrun.launcher <> - Launcher: command line to start before modification = C:\Users\zerin\OneDrive\Desktop\SoftBodyProjekt\prs-soft-body\renderer\build-vs\test-app\RelWithDebInfo\TestApp.exe
+252 [10840] INFO perfrun.launcher <> - Launcher: command line to start after modification = C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64\pin.exe -error_file C:\Users\zerin\OneDrive\Desktop\SoftBodyProjekt\prs-soft-body\XPBD-Analizaa\r000hs\data.0\pinerr.tpsslog -detach_reattach -probe -follow_execv -p32 C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64\pin.exe -p64 C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64\pin.exe -t64 C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64\tpsstool.dll -t C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6\bin64\tpsstool.dll -server_name tpss_ipc.21444 -prd_dir C:\Program Files (x86)\Intel\oneAPI\vtune\2026.6 -- C:\Users\zerin\OneDrive\Desktop\SoftBodyProjekt\prs-soft-body\renderer\build-vs\test-app\RelWithDebInfo\TestApp.exe
+253 [10840] INFO perfrun.launcher <> - ProcessCreator object was created
+265 [10840] INFO perfrun.launcher <> - Launcher: the process was started in suspend mode
+266 [23088] INFO perfrun.itt <> - start itt controller for pid #14244
+267 [23088] INFO perfrun.tpss <> - start tpss controller for pid #14244
+334 [10840] INFO perfrun.launcher <> - Launcher: all plugins were started
+334 [10840] INFO perfrun.launcher <> - DirectoryMonitor object was created
+334 [10840] INFO perfrun.launcher <> - DirectoryMonitor: a callback was added
+334 [10840] INFO perfrun.launcher <> - DirectoryMonitor was started with pingTime = 1000
+334 [10840] INFO perfrun.launcher <> - DeadlineTimer is going to be constructed
+334 [10840] INFO perfrun.launcher <> - DeadlineTimer: a callback was added
+362 [10840] INFO perfrun.launcher <> - Launcher: resume the profiled application and  wait its termination or stop command
+32001 [10840] INFO perfrun.launcher <> - Launcher: the profiled application was terminated  with exit code = 0
+32037 [23088] INFO perfrun.itt <> - detach itt controller
+32037 [23088] INFO perfrun.itt <> - detach itt controller done
+32037 [23088] INFO perfrun.tpss <> - stop tpss controller
+32040 [23088] INFO perfrun.sdk <> - De-allocating TMU: C:\Users\zerin\OneDrive\Desktop\SoftBodyProjekt\prs-soft-body\XPBD-Analizaa\r000hs\data.0\systemcollector-21444-Zerina.sc
+32058 [23088] INFO perfrun.system <> - closed the system trace file: C:\Users\zerin\OneDrive\Desktop\SoftBodyProjekt\prs-soft-body\XPBD-Analizaa\r000hs\data.0\systemcollector-21444-Zerina.sc
+32058 [10840] INFO perfrun.launcher <> - Launcher: all plugins were stopped.
+32058 [10840] INFO perfrun.launcher <> - DeadlineTimer is going to be destroyed
+32058 [10840] INFO perfrun.launcher <> - DeadlineTimer was destroyed
+32059 [10840] INFO perfrun.launcher <> - DirectoryMonitor object was destroyed
+32060 [10840] WARN perfrun.launcher <> - Stop command is ignored because it is received when collection is already stopped, at file: vcs\perfrun1\launcher\src\command_handler.cpp:226
+32064 [10840] INFO perfrun.launcher <> - Application exit code: 0
+32064 [10840] INFO perfrun.launcher <> - Exit code: 0
