@@ -35,6 +35,8 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 add_dependencies(${PROJECT_NAME} soft_body_xpbd_adapter)
 
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E rm -f
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/soft_body_xpbd_adapter.dll"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "$<TARGET_FILE:soft_body_xpbd_adapter>"
         "$<TARGET_FILE_DIR:${PROJECT_NAME}>"

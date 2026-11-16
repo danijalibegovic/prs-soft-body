@@ -13,12 +13,16 @@ int main()
 
     SoftWorld* world = api.softWorldCreate({0.0f, -9.81f, 0.0f});
     if (world == nullptr)
+    {
+        std::fprintf(stderr, "XPBD smoke: world creation failed\n");
         return 1;
+    }
 
     SoftBody* cube = api.softBodyCreateCube(
         world, {0.0f, 4.0f, 0.0f}, {1.25f, 1.25f, 1.25f}, 4.0f);
     SoftBody* ball = api.softBodyCreateSphere(
-        world, {0.0f, 7.5f, 0.0f}, 1.75f, 16, 0.6f);
+        world, {0.0f, 7.5f, 0.0f}, 1.75f, 7, 0.6f,
+        1e-7f, 2e-5f, 1e-8f, 8, 0.12f, 0.35f, 0.01f);
     if (cube == nullptr || ball == nullptr)
     {
         if (cube != nullptr)
@@ -26,6 +30,8 @@ int main()
         if (ball != nullptr)
             api.softBodyDestroy(ball);
         api.softWorldDestroy(world);
+        std::fprintf(stderr, "XPBD smoke: body creation failed (cube=%p, ball=%p)\n",
+                     static_cast<void*>(cube), static_cast<void*>(ball));
         return 1;
     }
 
@@ -37,17 +43,28 @@ int main()
         api.softBodyDestroy(cube);
         api.softBodyDestroy(ball);
         api.softWorldDestroy(world);
+        std::fprintf(stderr, "XPBD smoke: could not open telemetry output\n");
         return 1;
     }
 
-    std::fprintf(csv, "step,total_ms,node_count,face_count,cube_min_y,cube_max_y,ball_min_y,ball_max_y\n");
+    std::fprintf(csv, "step,total_ms,prediction_ms,constraints_ms,collision_ms,update_ms,node_count,face_count,cube_min_y,cube_max_y,ball_min_y,ball_max_y\n");
     constexpr float timestep = 1.0f / 60.0f;
+    float prediction_ms = 0.0f;
+    float constraints_ms = 0.0f;
+    float collision_ms = 0.0f;
+    float update_ms = 0.0f;
+    float total_ms = 0.0f;
     for (int step = 1; step <= 600; ++step)
     {
         if (!api.softWorldStep(world, timestep))
             break;
         SoftWorldStats stats{};
         api.softWorldGetStats(world, &stats);
+        total_ms += stats.total_ms;
+        prediction_ms += stats.prediction_ms;
+        constraints_ms += stats.constraints_ms;
+        collision_ms += stats.collision_ms;
+        update_ms += stats.update_ms;
         api.softBodyCopyNodePositions(cube, positions.data(), positions.size());
         float min_y = std::numeric_limits<float>::max();
         float max_y = std::numeric_limits<float>::lowest();
@@ -64,13 +81,25 @@ int main()
             ball_min_y = std::min(ball_min_y, position.y);
             ball_max_y = std::max(ball_max_y, position.y);
         }
-        std::fprintf(csv, "%d,%.6f,%zu,%zu,%.6f,%.6f,%.6f,%.6f\n",
-                     step, stats.total_ms, stats.node_count, stats.face_count,
+        std::fprintf(csv, "%d,%.6f,%.6f,%.6f,%.6f,%.6f,%zu,%zu,%.6f,%.6f,%.6f,%.6f\n",
+                     step, stats.total_ms, stats.prediction_ms,
+                     stats.constraints_ms, stats.collision_ms, stats.update_ms,
+                     stats.node_count, stats.face_count,
                      min_y, max_y, ball_min_y, ball_max_y);
         if (step % 60 == 0)
-            std::printf("step=%d total_ms=%.3f nodes=%zu faces=%zu cube_y_range=%.3f..%.3f ball_y_range=%.3f..%.3f\n",
-                        step, stats.total_ms, stats.node_count, stats.face_count,
+        {
+            std::printf("step=%d avg_step_ms=%.3f avg_stage_ms[predict=%.3f constraints=%.3f collision=%.3f update=%.3f] nodes=%zu faces=%zu cube_y_range=%.3f..%.3f ball_y_range=%.3f..%.3f\n",
+                        step, total_ms / 60.0f,
+                        prediction_ms / 60.0f, constraints_ms / 60.0f,
+                        collision_ms / 60.0f, update_ms / 60.0f,
+                        stats.node_count, stats.face_count,
                         min_y, max_y, ball_min_y, ball_max_y);
+            prediction_ms = 0.0f;
+            constraints_ms = 0.0f;
+            collision_ms = 0.0f;
+            update_ms = 0.0f;
+            total_ms = 0.0f;
+        }
     }
 
     std::fclose(csv);

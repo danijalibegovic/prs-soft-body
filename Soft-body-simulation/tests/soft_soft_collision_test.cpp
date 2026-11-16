@@ -1,6 +1,7 @@
 
 #include "physics/SoftBodyAdapter.h"
 
+#include <algorithm>
 #include <cstdio>
 #include <limits>
 #include <vector>
@@ -16,17 +17,24 @@ int main()
 
     SoftBody* cube = softBodyCreateCube(
         world,
-        SoftVec3{0.0f, 1.0f, 0.0f},
-        SoftVec3{1.0f, 1.0f, 1.0f},
-        10.0f
+        SoftVec3{0.0f, 4.0f, 0.0f},
+        SoftVec3{1.25f, 1.25f, 1.25f},
+        4.0f
     );
 
     SoftBody* sphere = softBodyCreateSphere(
         world,
-        SoftVec3{0.0f, 4.0f, 0.0f},
-        0.5f,
+        SoftVec3{1.35f, 7.5f, 0.0f},
+        1.75f,
+        7,
+        0.6f,
+        1e-7f,
+        2e-5f,
+        1e-8f,
         12,
-        1.0f
+        0.12f,
+        0.35f,
+        0.01f
     );
 
     if (!cube || !sphere) {
@@ -35,91 +43,39 @@ int main()
         return 1;
     }
 
-    const std::size_t count = softBodyGetNodeCount(sphere);
-    std::vector<SoftVec3> positions(count);
-
     constexpr float dt = 1.0f / 120.0f;
 
-    std::printf("Frame | Sphere min Y | Sphere max Y\n");
-    std::printf("-----------------------------------\n");
-
-    for (int frame = 0; frame < 360; ++frame) {
-        if (!softWorldStep(world, dt)) {
-            std::printf("Simulation step failed\n");
+    const std::size_t count = softBodyGetNodeCount(sphere);
+    std::vector<SoftVec3> positions(count);
+    for (int frame = 0; frame < 600; ++frame) {
+        if (!softWorldStep(world, dt) ||
+            softBodyCopyNodePositions(sphere, positions.data(), positions.size()) !=
+                positions.size()) {
+            std::printf("Simulation step or position read failed\n");
             softWorldDestroy(world);
             return 1;
         }
-
-        if (frame % 20 != 0)
-            continue;
-
-        softBodyCopyNodePositions(
-            sphere,
-            positions.data(),
-            positions.size()
-        );
-
-        
-float minX = std::numeric_limits<float>::max();
-float maxX = std::numeric_limits<float>::lowest();
-
-for (const auto& p : positions) {
-    if (p.x < minX) minX = p.x;
-    if (p.x > maxX) maxX = p.x;
-}
-
-const float centerX = (minX + maxX) * 0.5f;
-
-std::printf("Frame %d | Center X = %.4f\n",
-            frame, centerX);
-
-
-
-        float minY = std::numeric_limits<float>::max();
-        float maxY = std::numeric_limits<float>::lowest();
-
-        for (const auto& p : positions) {
-            if (p.y < minY) minY = p.y;
-            if (p.y > maxY) maxY = p.y;
-        }
-
-        std::printf(
-            "%5d | %12.4f | %12.4f\n",
-            frame, minY, maxY
-        );
     }
 
-    
-softBodyCopyNodePositions(
-    sphere,
-    positions.data(),
-    positions.size()
-);
+    float minY = std::numeric_limits<float>::max();
+    float meanY = 0.0f;
+    float meanX = 0.0f;
+    for (const auto& p : positions) {
+        minY = std::min(minY, p.y);
+        meanY += p.y;
+        meanX += p.x;
+    }
+    meanY /= static_cast<float>(positions.size());
+    meanX /= static_cast<float>(positions.size());
+    std::printf("Final sphere min Y=%.3f mean Y=%.3f mean X=%.3f\n",
+                minY, meanY, meanX);
+    if (minY > 0.1f || meanY > 3.0f || meanX < 1.5f) {
+        std::printf("FAIL: Ball remained on the cube instead of reaching the ground\n");
+        softWorldDestroy(world);
+        return 1;
+    }
 
-float finalMinY = std::numeric_limits<float>::max();
-
-for (const auto& p : positions) {
-    if (p.y < finalMinY)
-        finalMinY = p.y;
-}
-
-// Za ovaj konkretni test kocka pocinje s vrhom na y = 2.
-// Tolerancija dopusta malu numericku penetraciju.
-if (finalMinY < 1.90f) {
-    std::printf(
-        "FAIL: Soft sphere passed through cube (minY=%.4f)\n",
-        finalMinY
-    );
-
-    softWorldDestroy(world);
-    return 1;
-}
-
-std::printf("PASS: Soft sphere stayed above cube\n");
-
-
-
-
+    std::printf("PASS: Ball deflected from cube and settled on ground\n");
     softWorldDestroy(world);
     return 0;
 }

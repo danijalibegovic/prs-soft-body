@@ -47,12 +47,25 @@ Result run_benchmark(
             1.0f
         );
     } else if (shape == "sphere") {
+        std::size_t frequency = 2;
+        std::size_t threshold = 4;
+        while (frequency < 16 && threshold <= resolution) {
+            frequency *= 2;
+            threshold *= 2;
+        }
         body = softBodyCreateSphere(
             world,
             {0.0f, 5.0f, 0.0f},
             1.0f,
-            resolution,
-            1.0f
+            frequency,
+            1.0f,
+            1e-7f,
+            2e-5f,
+            1e-8f,
+            8,
+            0.12f,
+            0.35f,
+            0.01f
         );
     } else {
         softWorldDestroy(world);

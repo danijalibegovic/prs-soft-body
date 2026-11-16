@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <vector>
 #include <algorithm>
+#include <map>
 
 void check(bool condition, const char* message) {
     if (!condition)
@@ -42,19 +43,63 @@ int main() {
             world,
             {2.0f, 3.0f, 0.0f},
             0.5f,
+            7,
+            1.0f,
+            1e-7f,
+            2e-5f,
+            1e-8f,
             8,
-            1.0f
+            0.12f,
+            0.35f,
+            0.01f
         );
 
         check(sphere != nullptr, "Sphere creation failed");
 
 
-        check(softBodyGetNodeCount(sphere) == 115,
+        check(softBodyGetNodeCount(sphere) == 492,
               "Incorrect sphere node count");
-        check(softBodyGetFaceCount(sphere) == 224,
+        check(softBodyGetFaceCount(sphere) == 980,
               "Incorrect sphere face count");
 
-        std::cout << "[PASS] Sphere geometry\n";
+        std::vector<SoftVec3> sphere_positions(softBodyGetNodeCount(sphere));
+        std::vector<unsigned int> sphere_indices(softBodyGetFaceCount(sphere) * 3);
+        check(softBodyCopyNodePositions(sphere, sphere_positions.data(),
+                                        sphere_positions.size()) ==
+                  sphere_positions.size(),
+              "Failed to copy sphere positions");
+        check(softBodyCopyIndices(sphere, sphere_indices.data(),
+                                  sphere_indices.size()) == sphere_indices.size(),
+              "Failed to copy sphere indices");
+
+        std::map<std::pair<unsigned int, unsigned int>, size_t> edge_use_count;
+        std::vector<bool> referenced(sphere_positions.size(), false);
+        for (size_t i = 0; i < sphere_indices.size(); i += 3) {
+            const unsigned int face[] = {
+                sphere_indices[i], sphere_indices[i + 1], sphere_indices[i + 2]
+            };
+            for (size_t edge = 0; edge < 3; ++edge) {
+                const unsigned int a = face[edge];
+                const unsigned int b = face[(edge + 1) % 3];
+                check(a < sphere_positions.size() && b < sphere_positions.size(),
+                      "Sphere index out of range");
+                ++edge_use_count[std::minmax(a, b)];
+                referenced[a] = true;
+            }
+        }
+        check(std::all_of(referenced.begin(), referenced.end(),
+                          [](bool value) { return value; }),
+              "Sphere contains an unreferenced simulation particle");
+        check(std::all_of(edge_use_count.begin(), edge_use_count.end(),
+                          [](const auto& edge) { return edge.second == 2; }),
+              "Sphere is not a closed welded manifold");
+        const auto vertex_count = static_cast<long long>(sphere_positions.size());
+        const auto edge_count = static_cast<long long>(edge_use_count.size());
+        const auto face_count = static_cast<long long>(sphere_indices.size() / 3);
+        check(vertex_count - edge_count + face_count == 2,
+              "Sphere Euler characteristic is not 2");
+
+        std::cout << "[PASS] Welded closed sphere geometry\n";
 
                 
         SoftBody* cloth = softBodyCreateCloth(
@@ -240,10 +285,10 @@ int main() {
         check(softWorldGetStats(world, &stats) == 1,
               "Failed to get statistics");
 
-        check(stats.node_count == 244,
+        check(stats.node_count == 621,
               "Incorrect world node count");
 
-        check(stats.face_count == 436,
+        check(stats.face_count == 1192,
               "Incorrect world face count");
 
         std::cout << "[PASS] Simulation statistics\n";
@@ -326,7 +371,53 @@ int main() {
         world = nullptr;
 
         std::cout << "[PASS] World destruction\n";
-        std::cout << "\nAll 7 adapter tests passed!\n";
+
+        SoftWorld* volume_world = softWorldCreate({0.0f, -9.81f, 0.0f});
+        check(volume_world != nullptr, "Volume test world creation failed");
+        SoftBody* volume_sphere = softBodyCreateSphere(
+            volume_world, {0.0f, 2.0f, 0.0f}, 0.5f, 7, 0.6f,
+            1e-7f, 2e-5f, 1e-8f, 8, 0.12f, 0.35f, 0.01f);
+        check(volume_sphere != nullptr, "Volume test sphere creation failed");
+        const auto calculate_sphere_volume = [&](SoftBody* body) {
+            std::vector<SoftVec3> positions(softBodyGetNodeCount(body));
+            std::vector<unsigned int> indices(softBodyGetFaceCount(body) * 3);
+            check(softBodyCopyNodePositions(body, positions.data(), positions.size()) ==
+                      positions.size(),
+                  "Failed to read volume-test sphere positions");
+            check(softBodyCopyIndices(body, indices.data(), indices.size()) ==
+                      indices.size(),
+                  "Failed to read volume-test sphere indices");
+            double volume = 0.0;
+            for (std::size_t i = 0; i < indices.size(); i += 3) {
+                const auto& a = positions[indices[i]];
+                const auto& b = positions[indices[i + 1]];
+                const auto& c = positions[indices[i + 2]];
+                volume +=
+                    static_cast<double>(a.x) *
+                        (static_cast<double>(b.y) * c.z -
+                         static_cast<double>(b.z) * c.y) +
+                    static_cast<double>(a.y) *
+                        (static_cast<double>(b.z) * c.x -
+                         static_cast<double>(b.x) * c.z) +
+                    static_cast<double>(a.z) *
+                        (static_cast<double>(b.x) * c.y -
+                         static_cast<double>(b.y) * c.x);
+            }
+            return volume / 6.0;
+        };
+        const double rest_sphere_volume = calculate_sphere_volume(volume_sphere);
+        for (int step = 0; step < 600; ++step)
+            check(softWorldStep(volume_world, 1.0f / 60.0f) == 1,
+                  "Volume test simulation step failed");
+        const double landed_sphere_volume = calculate_sphere_volume(volume_sphere);
+        check(std::abs(landed_sphere_volume - rest_sphere_volume) /
+                  std::abs(rest_sphere_volume) < 0.03,
+              "Sphere volume changed by more than 3% after landing");
+        softBodyDestroy(volume_sphere);
+        softWorldDestroy(volume_world);
+        std::cout << "[PASS] Sphere volume after landing\n";
+
+        std::cout << "\nAll adapter tests passed!\n";
 
         return 0;
     }

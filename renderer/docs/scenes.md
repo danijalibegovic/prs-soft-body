@@ -1,24 +1,26 @@
-# Demo Scene
+# Demo Scenes
 
-The executable intentionally loads one scene: a Bullet soft cube showcase.
+The executable loads the XPBD soft-body showcase at startup.
 
-## Bullet Soft Cube
+## XPBD Soft Bodies
 
-**Source:** `test-app/src/BulletSoftBodyScene.cpp`
+**Source:** `test-app/src/XpbdSoftBodyScene.cpp`
 
-The scene runs Bullet through the C ABI adapter with a fixed `1/60` second
-timestep. A convex-hull soft cube falls under gravity onto a static ground
-plane, deforms during impact, and settles instead of passing through the
-ground.
+The scene combines a deformable cube with a hollow elastic sphere. The ball is
+a welded geodesic icosphere (frequency 7: 492 vertices and 980 triangles), with
+area-weighted particle masses, edge and bending distance constraints, and one
+closed-surface XPBD volume constraint. Its initial center is offset past the
+cube's support edge so it rolls off rather than settling in a symmetric,
+centered contact. It runs with a fixed `1/120` second timestep.
 
 **What to check:**
 
-- The cube falls from above the ground.
-- The cube visibly jiggles/deforms on contact.
-- The cube remains supported by the ground.
-- Bullet prints a timing summary every 60 physics steps.
+- The sphere falls, deforms on impact, bounces slightly, and retains most of
+  its volume.
+- The sphere's shading remains smooth as it deforms.
+- Both bodies remain supported by the ground.
 
-The standalone adapter proof and telemetry format are documented in
+The standalone Bullet adapter proof and telemetry format are documented in
 [bullet-soft-body.md](./bullet-soft-body.md).
 
 ## Controls

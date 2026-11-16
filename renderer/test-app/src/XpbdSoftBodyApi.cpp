@@ -35,10 +35,15 @@ bool XpbdSoftBodyApi::Load()
     spdlog::error("[XPBD] Runtime loading is currently supported on Windows only");
     return false;
 #else
+#ifdef XPBD_ADAPTER_SOURCE_DLL
+    std::filesystem::path path = XPBD_ADAPTER_SOURCE_DLL;
+    spdlog::info("[XPBD] Loading configured adapter {}", path.string());
+    m_module = LoadLibraryW(path.c_str());
+#else
     const std::filesystem::path executable_directory = GetExecutableDirectory();
     const std::filesystem::path adjacent_paths[] = {
-        executable_directory / "libsoft_body_xpbd_adapter.dll",
-        executable_directory / "soft_body_xpbd_adapter.dll",
+        executable_directory / "soft_body_xpbd_adapter_Debug.dll",
+        executable_directory / "soft_body_xpbd_adapter_Release.dll",
     };
     std::filesystem::path path = adjacent_paths[0];
     for (const auto& candidate : adjacent_paths)
@@ -48,13 +53,6 @@ bool XpbdSoftBodyApi::Load()
         m_module = LoadLibraryW(path.c_str());
         if (m_module != nullptr)
             break;
-    }
-#ifdef XPBD_ADAPTER_SOURCE_DLL
-    if (m_module == nullptr)
-    {
-        path = XPBD_ADAPTER_SOURCE_DLL;
-        spdlog::info("[XPBD] Trying configured source DLL {}", path.string());
-        m_module = LoadLibraryW(path.c_str());
     }
 #endif
     if (m_module == nullptr)
@@ -82,6 +80,7 @@ bool XpbdSoftBodyApi::Load()
     XPBD_LOAD(softWorldGetStats)
     XPBD_LOAD(softBodyCreateCloth)
     XPBD_LOAD(softBodyCreateSphere)
+    XPBD_LOAD(softBodySetSphereParameters)
     XPBD_LOAD(softBodyCreateCube)
     XPBD_LOAD(softBodyDestroy)
     XPBD_LOAD(softRigidBodyCreateSphere)

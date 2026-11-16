@@ -55,13 +55,13 @@ build.bat       # Windows - Release by default
 
 ## Demo scenes
 
-The application loads one Bullet soft-body showcase scene.
+The application loads one XPBD soft-body showcase scene.
 Its controls and expected behavior are documented in
 [docs/scenes.md](./docs/scenes.md).
 
 | Key | Scene | Purpose |
 | :-- | :---- | :------ |
-| `1` | **Bullet Soft Cube** | Fixed-step jiggly cube falling onto and settling on a solid ground plane. |
+| Startup | **XPBD Soft Bodies** | A deformable cube and a hollow elastic icosphere falling onto the ground. |
 
 ## Debug Overlay
 

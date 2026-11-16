@@ -26,7 +26,11 @@ public:
     int (*softWorldStep)(SoftWorld*, float) = nullptr;
     int (*softWorldGetStats)(const SoftWorld*, SoftWorldStats*) = nullptr;
     SoftBody* (*softBodyCreateCloth)(SoftWorld*, SoftVec3, float, float, size_t, size_t, float) = nullptr;
-    SoftBody* (*softBodyCreateSphere)(SoftWorld*, SoftVec3, float, size_t, float) = nullptr;
+    SoftBody* (*softBodyCreateSphere)(SoftWorld*, SoftVec3, float, size_t,
+                                      float, float, float, float, size_t,
+                                      float, float, float) = nullptr;
+    int (*softBodySetSphereParameters)(SoftBody*, float, float, float, float,
+                                       size_t, float, float, float) = nullptr;
     SoftBody* (*softBodyCreateCube)(SoftWorld*, SoftVec3, SoftVec3, float) = nullptr;
     void (*softBodyDestroy)(SoftBody*) = nullptr;
     SoftRigidBody* (*softRigidBodyCreateSphere)(SoftWorld*, SoftVec3, float, float) = nullptr;

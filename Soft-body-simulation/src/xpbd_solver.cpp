@@ -1,6 +1,7 @@
 
 #include "soft_body/xpbd_solver.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <stdexcept>
 
@@ -121,6 +122,60 @@ void XPBDSolver::solve_volume_constraints(double dt) {
     }
 }
 
+void XPBDSolver::solve_surface_volume_constraints(double dt) {
+    constexpr double epsilon = 1e-12;
+
+    for (auto& constraint : surface_volume_constraints) {
+        if (constraint.triangle_indices.size() % 3 != 0)
+            throw std::invalid_argument("Surface volume indices must form triangles");
+
+        if (constraint.gradient_scratch.size() != particles.size())
+            constraint.gradient_scratch.resize(particles.size());
+        std::fill(constraint.gradient_scratch.begin(),
+                  constraint.gradient_scratch.end(), Vec3{});
+        auto& gradients = constraint.gradient_scratch;
+        double volume = 0.0;
+        for (std::size_t i = 0; i < constraint.triangle_indices.size(); i += 3) {
+            const std::size_t ia = constraint.triangle_indices[i];
+            const std::size_t ib = constraint.triangle_indices[i + 1];
+            const std::size_t ic = constraint.triangle_indices[i + 2];
+            if (ia >= particles.size() || ib >= particles.size() || ic >= particles.size())
+                throw std::out_of_range("Invalid surface volume particle index");
+
+            const Vec3& a = particles[ia].position;
+            const Vec3& b = particles[ib].position;
+            const Vec3& c = particles[ic].position;
+            volume += a.dot(b.cross(c)) / 6.0;
+            gradients[ia] = gradients[ia] + b.cross(c) / 6.0;
+            gradients[ib] = gradients[ib] + c.cross(a) / 6.0;
+            gradients[ic] = gradients[ic] + a.cross(b) / 6.0;
+        }
+
+        const double C = volume - constraint.rest_volume;
+        double weighted_gradient_length_squared = 0.0;
+        for (std::size_t i = 0; i < particles.size(); ++i) {
+            const double inverse_mass = particles[i].inverse_mass;
+            weighted_gradient_length_squared +=
+                inverse_mass * gradients[i].dot(gradients[i]);
+        }
+
+        const double alpha = constraint.compliance / (dt * dt);
+        const double denominator = weighted_gradient_length_squared + alpha;
+        if (denominator < epsilon)
+            continue;
+
+        const double delta_lambda =
+            (-C - alpha * constraint.lambda) / denominator;
+        constraint.lambda += delta_lambda;
+
+        for (std::size_t i = 0; i < particles.size(); ++i) {
+            particles[i].position =
+                particles[i].position +
+                gradients[i] * (particles[i].inverse_mass * delta_lambda);
+        }
+    }
+}
+
 
 void XPBDSolver::update_velocities(double dt) {
     for (auto& p : particles) {
@@ -149,12 +204,16 @@ void XPBDSolver::step(double dt) {
     for (auto& c : volume_constraints) {
         c.lambda = 0.0;
     }
+    for (auto& c : surface_volume_constraints) {
+        c.lambda = 0.0;
+    }
 
     predict_positions(dt);
 
     for (int i = 0; i < solver_iterations; ++i) {
         solve_distance_constraints(dt);
         solve_volume_constraints(dt);
+        solve_surface_volume_constraints(dt);
     }
 
     update_velocities(dt);

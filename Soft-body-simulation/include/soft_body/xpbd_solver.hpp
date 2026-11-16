@@ -29,12 +29,21 @@ struct VolumeConstraint {
     double lambda = 0.0;
 };
 
+struct SurfaceVolumeConstraint {
+    std::vector<std::size_t> triangle_indices;
+    std::vector<Vec3> gradient_scratch;
+    double rest_volume = 0.0;
+    double compliance = 0.0;
+    double lambda = 0.0;
+};
+
 
 class XPBDSolver {
 public:
     std::vector<Particle> particles;
     std::vector<DistanceConstraint> distance_constraints;
     std::vector<VolumeConstraint> volume_constraints;
+    std::vector<SurfaceVolumeConstraint> surface_volume_constraints;
 
     Vec3 gravity{0.0, -9.81, 0.0};
 
@@ -48,6 +57,7 @@ public:
     void solve_distance_constraints(double dt);
     void update_velocities(double dt);
     void solve_volume_constraints(double dt);
+    void solve_surface_volume_constraints(double dt);
 };
 
 } // namespace soft_body

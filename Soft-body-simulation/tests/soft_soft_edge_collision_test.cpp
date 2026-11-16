@@ -25,8 +25,15 @@ int main()
         world,
         SoftVec3{0.85f, 4.0f, 0.0f},
         0.5f,
-        12,
-        1.0f
+        2,
+        1.0f,
+        1e-7f,
+        2e-5f,
+        1e-8f,
+        8,
+        0.12f,
+        0.35f,
+        0.01f
     );
 
     if (!cube || !sphere) {

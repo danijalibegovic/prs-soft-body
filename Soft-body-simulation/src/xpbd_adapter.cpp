@@ -11,6 +11,9 @@
 #include <iterator>
 #include <utility>
 #include <cstdio>
+#include <map>
+#include <set>
+#include <tuple>
 
 struct SoftBody;
 struct SoftRigidBody;
@@ -35,6 +38,12 @@ struct SoftBody {
     soft_body::XPBDSolver solver;
 
     std::vector<unsigned int> triangle_indices;
+    std::size_t sphere_edge_constraint_count = 0;
+    double sphere_total_mass = 0.0;
+    bool is_configurable_sphere = false;
+    double ground_restitution = 0.0;
+    double ground_friction = 0.6;
+    double velocity_damping = 0.0;
 };
 
 
@@ -589,8 +598,8 @@ int softWorldStep(SoftWorld* world, float timestep_seconds) {
     try {
         const auto start = std::chrono::steady_clock::now();
 
-        
         const double dt = static_cast<double>(timestep_seconds);
+        const auto prediction_start = start;
 
         // 1. Reset XPBD lambda vrijednosti.
         for (SoftBody* body : world->bodies) {
@@ -601,14 +610,19 @@ int softWorldStep(SoftWorld* world, float timestep_seconds) {
             for (auto& c : body->solver.volume_constraints) {
                 c.lambda = 0.0;
             }
+            for (auto& c : body->solver.surface_volume_constraints) {
+                c.lambda = 0.0;
+            }
         }
 
         // 2. Predikcija pozicija svih deformabilnih tijela.
         for (SoftBody* body : world->bodies) {
             body->solver.predict_positions(dt);
         }
+        const auto prediction_end = std::chrono::steady_clock::now();
 
         // 3. Zajednicke XPBD iteracije.
+        const auto constraints_start = prediction_end;
         int max_iterations = 0;
 
         for (SoftBody* body : world->bodies) {
@@ -625,6 +639,7 @@ int softWorldStep(SoftWorld* world, float timestep_seconds) {
 
                 body->solver.solve_distance_constraints(dt);
                 body->solver.solve_volume_constraints(dt);
+                body->solver.solve_surface_volume_constraints(dt);
             }
 
             // U narednom koraku ovdje dodajemo
@@ -632,10 +647,9 @@ int softWorldStep(SoftWorld* world, float timestep_seconds) {
         }
 
         
+        const auto constraints_end = std::chrono::steady_clock::now();
 
-
-        
-
+        const auto collision_start = constraints_end;
         // Jednostavna gravitacija i kolizija rigidnih sfera s podlogom y = 0.
         for (SoftRigidBody* body : world->rigid_bodies) {
             body->previous_position = body->position;
@@ -656,38 +670,15 @@ int softWorldStep(SoftWorld* world, float timestep_seconds) {
             }
         }
 
-        // Jednostavna kolizija XPBD cestica s podlogom y = 0.
+        // Project soft-body particles onto the ground before velocity update.
         for (SoftBody* body : world->bodies) {
             for (auto& particle : body->solver.particles) {
-                if (particle.position.y < 0.0) {
+                if (particle.position.y < 0.0)
                     particle.position.y = 0.0;
-
-                    if (particle.velocity.y < 0.0)
-                        particle.velocity.y = 0.0;
-                }
             }
         }
-
-
-        const auto collision_start = std::chrono::steady_clock::now();
         resolveSphereMeshContacts(world, dt);
         resolveSoftSoftContacts(world);
-
-            #ifdef _DEBUG
-        std::fprintf(stderr, "[XPBD] Soft-soft corrections: %zu\n",
-                    world->soft_soft_contact_count);
-        #endif
-
-        
-        #ifdef _DEBUG
-        std::fprintf(
-            stderr,
-            "[XPBD] Sphere-mesh contact corrections: %zu\n",
-            world->sphere_mesh_contact_count
-        );
-        #endif
-
-        
         // Brzina rigidne sfere nakon pozicionih korekcija.
         for (SoftRigidBody* body : world->rigid_bodies) {
             if (body->mass == 0.0) {
@@ -708,8 +699,22 @@ int softWorldStep(SoftWorld* world, float timestep_seconds) {
         const auto collision_end = std::chrono::steady_clock::now();
 
         // Azuriranje brzina nakon korekcije pozicija.
+        const auto update_start = collision_end;
         for (SoftBody* body : world->bodies) {
             body->solver.update_velocities(dt);
+            for (auto& particle : body->solver.particles) {
+                particle.velocity =
+                    particle.velocity * (1.0 - body->velocity_damping);
+                if (particle.position.y > 1e-8 || particle.velocity.y >= 0.0)
+                    continue;
+
+                if (particle.velocity.y < -0.5)
+                    particle.velocity.y *= -body->ground_restitution;
+                else
+                    particle.velocity.y = 0.0;
+                particle.velocity.x *= 1.0 - body->ground_friction;
+                particle.velocity.z *= 1.0 - body->ground_friction;
+            }
         }
 
         const auto end = std::chrono::steady_clock::now();
@@ -719,11 +724,20 @@ int softWorldStep(SoftWorld* world, float timestep_seconds) {
                 end - start
             ).count();
 
-        world->stats.prediction_ms = 0.0f;
-        world->stats.constraints_ms = 0.0f;
+        world->stats.prediction_ms =
+            std::chrono::duration<float, std::milli>(
+                prediction_end - prediction_start
+            ).count();
+        world->stats.constraints_ms =
+            std::chrono::duration<float, std::milli>(
+                constraints_end - constraints_start
+            ).count();
         world->stats.collision_ms =
             std::chrono::duration<float, std::milli>(collision_end - collision_start).count();
-        world->stats.update_ms = 0.0f;
+        world->stats.update_ms =
+            std::chrono::duration<float, std::milli>(
+                end - update_start
+            ).count();
 
         world->stats.node_count = 0;
         world->stats.face_count = 0;
@@ -866,8 +880,15 @@ SoftBody* softBodyCreateSphere(
     SoftWorld* world,
     SoftVec3 center,
     float radius,
-    size_t resolution,
-    float total_mass
+    size_t frequency,
+    float total_mass,
+    float edge_compliance,
+    float bending_compliance,
+    float volume_compliance,
+    size_t solver_iterations,
+    float restitution,
+    float ground_friction,
+    float velocity_damping
 ) {
     if (world == nullptr ||
         !std::isfinite(center.x) ||
@@ -875,9 +896,24 @@ SoftBody* softBodyCreateSphere(
         !std::isfinite(center.z) ||
         !std::isfinite(radius) ||
         !std::isfinite(total_mass) ||
+        !std::isfinite(edge_compliance) ||
+        !std::isfinite(bending_compliance) ||
+        !std::isfinite(volume_compliance) ||
+        !std::isfinite(restitution) ||
+        !std::isfinite(ground_friction) ||
+        !std::isfinite(velocity_damping) ||
         radius <= 0.0f ||
-        resolution < 4 ||
-        total_mass <= 0.0f) {
+        frequency < 1 ||
+        frequency > 16 ||
+        total_mass <= 0.0f ||
+        edge_compliance < 0.0f ||
+        bending_compliance < 0.0f ||
+        volume_compliance < 0.0f ||
+        solver_iterations < 1 ||
+        solver_iterations > 64 ||
+        restitution < 0.0f || restitution > 1.0f ||
+        ground_friction < 0.0f || ground_friction > 1.0f ||
+        velocity_damping < 0.0f || velocity_damping > 1.0f) {
         return nullptr;
     }
 
@@ -885,230 +921,198 @@ SoftBody* softBodyCreateSphere(
         auto body = std::make_unique<SoftBody>();
         body->world = world;
         body->solver.gravity = world->gravity;
-        body->solver.solver_iterations = 10;
+        body->is_configurable_sphere = true;
+        body->sphere_total_mass = total_mass;
+        body->solver.solver_iterations = static_cast<int>(solver_iterations);
+        body->ground_restitution = restitution;
+        body->ground_friction = ground_friction;
+        body->velocity_damping = velocity_damping;
 
-        const size_t stacks = resolution;
-        const size_t slices = resolution * 2;
-
-        // Ogranicavamo velicinu mreze za pocetnu verziju.
-        if (resolution > 128)
-            return nullptr;
-
-        const double pi = std::acos(-1.0);
         const double r = static_cast<double>(radius);
-
         const double cx = center.x;
         const double cy = center.y;
         const double cz = center.z;
+        const double golden_ratio = (1.0 + std::sqrt(5.0)) * 0.5;
+        std::vector<soft_body::Vec3> unit_vertices = {
+            {-1, golden_ratio, 0}, {1, golden_ratio, 0},
+            {-1, -golden_ratio, 0}, {1, -golden_ratio, 0},
+            {0, -1, golden_ratio}, {0, 1, golden_ratio},
+            {0, -1, -golden_ratio}, {0, 1, -golden_ratio},
+            {golden_ratio, 0, -1}, {golden_ratio, 0, 1},
+            {-golden_ratio, 0, -1}, {-golden_ratio, 0, 1}
+        };
+        std::vector<unsigned int> triangles = {
+            0,11,5, 0,5,1, 0,1,7, 0,7,10, 0,10,11,
+            1,5,9, 5,11,4, 11,10,2, 10,7,6, 7,1,8,
+            3,9,4, 3,4,2, 3,2,6, 3,6,8, 3,8,9,
+            4,9,5, 2,4,11, 6,2,10, 8,6,7, 9,8,1
+        };
 
-        auto add_particle = [&](double x, double y, double z) {
+        for (auto& vertex : unit_vertices)
+            vertex = vertex / vertex.length();
+
+        const std::vector<soft_body::Vec3> icosahedron_vertices = unit_vertices;
+        const std::vector<unsigned int> base_triangles = triangles;
+        using PositionKey = std::tuple<long long, long long, long long>;
+        std::map<PositionKey, unsigned int> shared_vertices;
+        const auto add_geodesic_vertex = [&](const soft_body::Vec3& position) {
+            const PositionKey key{
+                std::llround(position.x * 1e10),
+                std::llround(position.y * 1e10),
+                std::llround(position.z * 1e10)
+            };
+            const auto found = shared_vertices.find(key);
+            if (found != shared_vertices.end())
+                return found->second;
+
+            const unsigned int index =
+                static_cast<unsigned int>(unit_vertices.size());
+            unit_vertices.push_back(position);
+            shared_vertices.emplace(key, index);
+            return index;
+        };
+
+        triangles.clear();
+        triangles.reserve(20 * frequency * frequency * 3);
+        unit_vertices.clear();
+        unit_vertices.reserve(10 * frequency * frequency + 2);
+
+        for (size_t face = 0; face < base_triangles.size(); face += 3) {
+            const auto& a = icosahedron_vertices[base_triangles[face]];
+            const auto& b = icosahedron_vertices[base_triangles[face + 1]];
+            const auto& c = icosahedron_vertices[base_triangles[face + 2]];
+            std::vector<std::vector<unsigned int>> grid(frequency + 1);
+            for (size_t row = 0; row <= frequency; ++row) {
+                grid[row].resize(row + 1);
+                for (size_t column = 0; column <= row; ++column) {
+                    const double weight_a =
+                        static_cast<double>(frequency - row);
+                    const double weight_b =
+                        static_cast<double>(row - column);
+                    const double weight_c =
+                        static_cast<double>(column);
+                    const auto point =
+                        (a * weight_a + b * weight_b + c * weight_c) /
+                        static_cast<double>(frequency);
+                    grid[row][column] =
+                        add_geodesic_vertex(point / point.length());
+                }
+            }
+
+            for (size_t row = 0; row < frequency; ++row) {
+                for (size_t column = 0; column <= row; ++column) {
+                    triangles.insert(triangles.end(), {
+                        grid[row][column],
+                        grid[row + 1][column],
+                        grid[row + 1][column + 1]
+                    });
+                    if (column < row) {
+                        triangles.insert(triangles.end(), {
+                            grid[row][column],
+                            grid[row + 1][column + 1],
+                            grid[row][column + 1]
+                        });
+                    }
+                }
+            }
+        }
+
+        std::vector<double> vertex_area(unit_vertices.size(), 0.0);
+        for (size_t i = 0; i < triangles.size(); i += 3) {
+            unsigned int& a = triangles[i];
+            unsigned int& b = triangles[i + 1];
+            unsigned int& c = triangles[i + 2];
+            const auto& pa = unit_vertices[a];
+            const auto& pb = unit_vertices[b];
+            const auto& pc = unit_vertices[c];
+            if ((pb - pa).cross(pc - pa).dot(pa + pb + pc) < 0.0)
+                std::swap(b, c);
+
+            const double area =
+                (unit_vertices[b] - unit_vertices[a])
+                    .cross(unit_vertices[c] - unit_vertices[a]).length() *
+                r * r * 0.5;
+            vertex_area[a] += area / 3.0;
+            vertex_area[b] += area / 3.0;
+            vertex_area[c] += area / 3.0;
+        }
+
+        double total_area = 0.0;
+        for (const double area : vertex_area)
+            total_area += area;
+
+        for (size_t i = 0; i < unit_vertices.size(); ++i) {
+            const auto position =
+                unit_vertices[i] * r + soft_body::Vec3{cx, cy, cz};
             soft_body::Particle particle{};
-
-            particle.position = {x, y, z};
-            particle.previous_position = particle.position;
-            particle.velocity = {0.0, 0.0, 0.0};
-
+            particle.position = position;
+            particle.previous_position = position;
+            particle.inverse_mass =
+                total_area / (static_cast<double>(total_mass) * vertex_area[i]);
             body->solver.particles.push_back(particle);
-        };
+        }
+        body->triangle_indices = std::move(triangles);
 
-        // Gornji pol
-        add_particle(cx, cy + r, cz);
-
-        // Prstenovi sfere
-        for (size_t stack = 1; stack < stacks; ++stack) {
-            const double theta =
-                pi * static_cast<double>(stack) /
-                static_cast<double>(stacks);
-
-            const double y = std::cos(theta);
-            const double ring_radius = std::sin(theta);
-
-            for (size_t slice = 0; slice < slices; ++slice) {
-                const double phi =
-                    2.0 * pi * static_cast<double>(slice) /
-                    static_cast<double>(slices);
-
-                const double x =
-                    ring_radius * std::cos(phi);
-
-                const double z =
-                    ring_radius * std::sin(phi);
-
-                add_particle(
-                    cx + r * x,
-                    cy + r * y,
-                    cz + r * z
-                );
+        using Edge = std::pair<unsigned int, unsigned int>;
+        std::map<Edge, unsigned int> edge_opposite_vertices;
+        std::set<Edge> bending_pairs;
+        for (size_t i = 0; i < body->triangle_indices.size(); i += 3) {
+            const unsigned int face[3] = {
+                body->triangle_indices[i],
+                body->triangle_indices[i + 1],
+                body->triangle_indices[i + 2]
+            };
+            for (size_t edge_index = 0; edge_index < 3; ++edge_index) {
+                unsigned int a = face[edge_index];
+                unsigned int b = face[(edge_index + 1) % 3];
+                const unsigned int opposite = face[(edge_index + 2) % 3];
+                if (a > b)
+                    std::swap(a, b);
+                const Edge edge{a, b};
+                const auto [it, inserted] =
+                    edge_opposite_vertices.emplace(edge, opposite);
+                if (!inserted) {
+                    unsigned int first = it->second;
+                    unsigned int second = opposite;
+                    if (first > second)
+                        std::swap(first, second);
+                    bending_pairs.emplace(first, second);
+                }
             }
         }
 
-        // Donji pol
-        const unsigned int bottom_index =
-            static_cast<unsigned int>(
-                body->solver.particles.size()
-            );
-
-        add_particle(cx, cy - r, cz);
-        
-        const size_t center_index =
-            body->solver.particles.size();
-
-        add_particle(cx, cy, cz);
-
-
-        const size_t particle_count =
-            body->solver.particles.size();
-
-        const double inverse_mass =
-            static_cast<double>(particle_count) /
-            static_cast<double>(total_mass);
-
-        for (auto& particle : body->solver.particles) {
-            particle.inverse_mass = inverse_mass;
-        }
-
-        auto ring_index = [&](size_t stack, size_t slice)
-            -> unsigned int {
-            return static_cast<unsigned int>(
-                1 + (stack - 1) * slices + (slice % slices)
-            );
-        };
-
-        // Gornja kapa
-        for (size_t slice = 0; slice < slices; ++slice) {
-            const unsigned int a =
-                ring_index(1, slice);
-
-            const unsigned int b =
-                ring_index(1, slice + 1);
-
-            body->triangle_indices.push_back(0);
-            body->triangle_indices.push_back(b);
-            body->triangle_indices.push_back(a);
-        }
-
-        // Srednji dio sfere
-        for (size_t stack = 1; stack < stacks - 1; ++stack) {
-            for (size_t slice = 0; slice < slices; ++slice) {
-                const unsigned int a =
-                    ring_index(stack, slice);
-
-                const unsigned int b =
-                    ring_index(stack, slice + 1);
-
-                const unsigned int c =
-                    ring_index(stack + 1, slice);
-
-                const unsigned int d =
-                    ring_index(stack + 1, slice + 1);
-
-                body->triangle_indices.insert(
-                    body->triangle_indices.end(),
-                    {a, b, c, b, d, c}
-                );
-            }
-        }
-
-        // Donja kapa
-        for (size_t slice = 0; slice < slices; ++slice) {
-            const unsigned int a =
-                ring_index(stacks - 1, slice);
-
-            const unsigned int b =
-                ring_index(stacks - 1, slice + 1);
-
-            body->triangle_indices.push_back(a);
-            body->triangle_indices.push_back(b);
-            body->triangle_indices.push_back(bottom_index);
-        }
-
-        // Distance constraints duz ivica trouglova
-        std::vector<std::pair<unsigned int, unsigned int>> edges;
-
-        auto add_edge = [&](unsigned int a, unsigned int b) {
-            if (a > b)
-                std::swap(a, b);
-
-            edges.emplace_back(a, b);
-        };
-
-        for (size_t i = 0;
-             i < body->triangle_indices.size();
-             i += 3) {
-
-            const unsigned int a =
-                body->triangle_indices[i];
-
-            const unsigned int b =
-                body->triangle_indices[i + 1];
-
-            const unsigned int c =
-                body->triangle_indices[i + 2];
-
-            add_edge(a, b);
-            add_edge(b, c);
-            add_edge(c, a);
-        }
-
-        std::sort(edges.begin(), edges.end());
-        edges.erase(
-            std::unique(edges.begin(), edges.end()),
-            edges.end()
-        );
-
-        const double compliance = 1e-5;
-
-        for (const auto& edge : edges) {
-            const size_t a = edge.first;
-            const size_t b = edge.second;
-
+        auto add_distance_constraint = [&](unsigned int a, unsigned int b,
+                                           double compliance) {
             const auto difference =
                 body->solver.particles[b].position -
                 body->solver.particles[a].position;
-
             body->solver.distance_constraints.push_back({
-                a,
-                b,
-                difference.length(),
-                compliance,
-                0.0
+                a, b, difference.length(), compliance, 0.0
             });
+        };
+        for (const auto& [edge, opposite] : edge_opposite_vertices) {
+            (void)opposite;
+            add_distance_constraint(edge.first, edge.second, edge_compliance);
         }
+        body->sphere_edge_constraint_count =
+            body->solver.distance_constraints.size();
+        for (const Edge& pair : bending_pairs)
+            add_distance_constraint(pair.first, pair.second, bending_compliance);
 
-        
-const double volume_compliance = 1e-7;
-
-for (size_t i = 0;
-     i < body->triangle_indices.size();
-     i += 3) {
-
-    const size_t a = body->triangle_indices[i];
-    const size_t b = body->triangle_indices[i + 1];
-    const size_t c = body->triangle_indices[i + 2];
-    const size_t d = center_index;
-
-    const auto& p0 = body->solver.particles[a].position;
-    const auto& p1 = body->solver.particles[b].position;
-    const auto& p2 = body->solver.particles[c].position;
-    const auto& p3 = body->solver.particles[d].position;
-
-    const auto e1 = p1 - p0;
-    const auto e2 = p2 - p0;
-    const auto e3 = p3 - p0;
-
-    const double rest_volume =
-        e1.dot(e2.cross(e3)) / 6.0;
-
-    body->solver.volume_constraints.push_back({
-        a,
-        b,
-        c,
-        d,
-        rest_volume,
-        volume_compliance,
-        0.0
-    });
-}
+        soft_body::SurfaceVolumeConstraint surface_volume;
+        surface_volume.triangle_indices.assign(
+            body->triangle_indices.begin(), body->triangle_indices.end());
+        surface_volume.gradient_scratch.resize(
+            body->solver.particles.size());
+        surface_volume.compliance = volume_compliance;
+        for (size_t i = 0; i < body->triangle_indices.size(); i += 3) {
+            const auto& a = body->solver.particles[body->triangle_indices[i]].position;
+            const auto& b = body->solver.particles[body->triangle_indices[i + 1]].position;
+            const auto& c = body->solver.particles[body->triangle_indices[i + 2]].position;
+            surface_volume.rest_volume += a.dot(b.cross(c)) / 6.0;
+        }
+        body->solver.surface_volume_constraints.push_back(
+            std::move(surface_volume));
 
 
         SoftBody* result = body.get();
@@ -1120,6 +1124,60 @@ for (size_t i = 0;
     catch (...) {
         return nullptr;
     }
+}
+
+int softBodySetSphereParameters(
+    SoftBody* body,
+    float total_mass,
+    float edge_compliance,
+    float bending_compliance,
+    float volume_compliance,
+    size_t solver_iterations,
+    float restitution,
+    float ground_friction,
+    float velocity_damping
+) {
+    if (body == nullptr ||
+        !body->is_configurable_sphere ||
+        !std::isfinite(total_mass) ||
+        !std::isfinite(edge_compliance) ||
+        !std::isfinite(bending_compliance) ||
+        !std::isfinite(volume_compliance) ||
+        !std::isfinite(restitution) ||
+        !std::isfinite(ground_friction) ||
+        !std::isfinite(velocity_damping) ||
+        total_mass <= 0.0f ||
+        edge_compliance < 0.0f ||
+        bending_compliance < 0.0f ||
+        volume_compliance < 0.0f ||
+        solver_iterations < 1 ||
+        solver_iterations > 64 ||
+        restitution < 0.0f || restitution > 1.0f ||
+        ground_friction < 0.0f || ground_friction > 1.0f ||
+        velocity_damping < 0.0f || velocity_damping > 1.0f ||
+        body->solver.surface_volume_constraints.empty()) {
+        return 0;
+    }
+
+    const double mass_scale =
+        body->sphere_total_mass / static_cast<double>(total_mass);
+    for (std::size_t i = 0; i < body->solver.particles.size(); ++i) {
+        auto& particle = body->solver.particles[i];
+        particle.inverse_mass *= mass_scale;
+    }
+    body->sphere_total_mass = total_mass;
+    body->solver.solver_iterations = static_cast<int>(solver_iterations);
+    for (std::size_t i = 0; i < body->solver.distance_constraints.size(); ++i) {
+        body->solver.distance_constraints[i].compliance =
+            i < body->sphere_edge_constraint_count
+                ? edge_compliance
+                : bending_compliance;
+    }
+    body->solver.surface_volume_constraints[0].compliance = volume_compliance;
+    body->ground_restitution = restitution;
+    body->ground_friction = ground_friction;
+    body->velocity_damping = velocity_damping;
+    return 1;
 }
 
 
