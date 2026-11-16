@@ -157,7 +157,7 @@ void XpbdSoftBodyScene::OnImGuiRender()
 SoftBody* XpbdSoftBodyScene::CreateBall()
 {
     return m_api.softBodyCreateSphere(
-        m_world, {1.35f, 7.5f, 0.0f}, 1.75f,
+        m_world, {0.0f, 7.5f, 0.0f}, 1.75f,
         static_cast<size_t>(m_ballParams.mesh_frequency),
         m_ballParams.total_mass,
         m_ballParams.edge_compliance,
